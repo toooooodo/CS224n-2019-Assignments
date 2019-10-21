@@ -8,5 +8,9 @@ Course page: [CS224n: Natural Language Processing with Deep Learning](http://web
 ## Assignment 1
 
 - [x] coding
+- [ ] written
 
-- [ ] writing  
+## Assignment 2
+
+- [ ] coding  
+- [x] written
