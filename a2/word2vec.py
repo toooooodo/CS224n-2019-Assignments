@@ -53,8 +53,13 @@ def naiveSoftmaxLossAndGradient(
     """
 
     ### YOUR CODE HERE
-    u_o = np.expand_dims(outsideVectors[outsideWordIdx], axis=0)
-
+    y = np.zeros(outsideVectors.shape[0])
+    y[outsideWordIdx] = 1.
+    y_head = softmax(centerWordVec @ outsideVectors.T)
+    loss = -np.log(y_head[outsideWordIdx])
+    gradCenterVec = (y_head - y) @ outsideVectors
+    gradOutsideVecs = y_head.T @ centerWordVec
+    gradOutsideVecs[outsideWordIdx] -= centerWordVec
     ### Please use the provided softmax function (imported earlier in this file)
     ### This numerically stable implementation helps you avoid issues pertaining
     ### to integer overflow. 
