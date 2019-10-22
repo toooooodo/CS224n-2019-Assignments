@@ -17,7 +17,7 @@ def sigmoid(x):
     """
 
     ### YOUR CODE HERE
-
+    s = 1.0 / (1 + np.exp(-x))
     ### END YOUR CODE
 
     return s
@@ -53,6 +53,7 @@ def naiveSoftmaxLossAndGradient(
     """
 
     ### YOUR CODE HERE
+    u_o = np.expand_dims(outsideVectors[outsideWordIdx], axis=0)
 
     ### Please use the provided softmax function (imported earlier in this file)
     ### This numerically stable implementation helps you avoid issues pertaining
