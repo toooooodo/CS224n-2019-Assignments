@@ -76,6 +76,8 @@ def train_for_epoch(parser, train_data, dev_data, optimizer, loss_func, batch_si
 
     @return dev_UAS (float): Unlabeled Attachment Score (UAS) for dev data
     """
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
     parser.model.train()  # Places model in "train" mode, i.e. apply dropout layer
     n_minibatches = math.ceil(len(train_data) / batch_size)
     loss_meter = AverageMeter()
@@ -98,6 +100,9 @@ def train_for_epoch(parser, train_data, dev_data, optimizer, loss_func, batch_si
             ###      4) Take step with the optimizer
             ### Please see the following docs for support:
             ###     Optimizer Step: https://pytorch.org/docs/stable/optim.html#optimizer-step
+            parser.model.to(device)
+            train_x = train_x.to(device)
+            train_y = train_y.to(device)
             logits = parser.model.forward(train_x)
             loss = loss_func(logits, train_y)
             loss.backward()
@@ -110,6 +115,7 @@ def train_for_epoch(parser, train_data, dev_data, optimizer, loss_func, batch_si
 
     print("Evaluating on dev set", )
     parser.model.eval()  # Places model in "eval" mode, i.e. don't apply dropout layer
+    parser.model.cpu()
     dev_UAS, _ = parser.parse(dev_data)
     print("- dev UAS: {:.2f}".format(dev_UAS * 100.0))
     return dev_UAS
