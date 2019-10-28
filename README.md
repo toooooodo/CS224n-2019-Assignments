@@ -2,7 +2,7 @@
 
 Solutions for **CS224n, winter, 2019.**
 
-Course page: [CS224n: Natural Language Processing with Deep Learning](http://web.stanford.edu/class/cs224n/index.html)
+Course home page: [CS224n: Natural Language Processing with Deep Learning](http://web.stanford.edu/class/cs224n/index.html)
 
 ---
 ## Assignment 1
@@ -19,3 +19,8 @@ Course page: [CS224n: Natural Language Processing with Deep Learning](http://web
 
 - [x] coding
 - [x] written
+
+## Assignment 4
+
+- [ ] coding
+- [ ] written
