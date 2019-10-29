@@ -173,11 +173,11 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.permute
         x = self.model_embeddings.source(source_padded)  # (src_len, b, e)
         x = pack_padded_sequence(x, torch.tensor(source_lengths))
-        enc_output, (enc_h, enc_c) = self.encoder(x)
-        enc_output = pad_packed_sequence(enc_output)[0].permute(1, 0, 2)
+        enc_hiddens, (enc_h, enc_c) = self.encoder(x)
+        enc_hiddens = pad_packed_sequence(enc_hiddens)[0].permute(1, 0, 2)
         h_0_dec = self.h_projection(torch.cat((enc_h[0], enc_h[1]), dim=1))
         c_0_dec = self.c_projection(torch.cat((enc_c[0], enc_c[1]), dim=1))
-        return enc_output, (h_0_dec, c_0_dec)
+        dec_init_state = (h_0_dec, c_0_dec)
         ### END YOUR CODE
 
         return enc_hiddens, dec_init_state
@@ -245,6 +245,8 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tensor Stacking:
         ###         https://pytorch.org/docs/stable/torch.html#torch.stack
+        enc_hiddens_proj = self.att_projection(enc_hiddens)  # (b, src_len, h)
+        y = self.model_embeddings.target(target_padded)  # (tgt_len, b, e)
 
         ### END YOUR CODE
 
