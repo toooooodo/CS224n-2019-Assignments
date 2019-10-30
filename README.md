@@ -23,4 +23,4 @@ Course home page: [CS224n: Natural Language Processing with Deep Learning](http:
 ## Assignment 4
 
 - [x] coding
-- [ ] written
+- [x] written
