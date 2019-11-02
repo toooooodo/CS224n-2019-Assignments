@@ -8,6 +8,7 @@ CS224N 2018-19: Homework 5
 import torch
 import torch.nn as nn
 
+
 class CharDecoder(nn.Module):
     def __init__(self, hidden_size, char_embedding_size=50, target_vocab=None):
         """ Init Character Decoder.
@@ -27,13 +28,19 @@ class CharDecoder(nn.Module):
         ### Hint: - Use target_vocab.char2id to access the character vocabulary for the target language.
         ###       - Set the padding_idx argument of the embedding matrix.
         ###       - Create a new Embedding layer. Do not reuse embeddings created in Part 1 of this assignment.
-        
-
+        super(CharDecoder, self).__init__()
+        self.hidden_size = hidden_size
+        self.char_embedding_size = char_embedding_size
+        self.target_vocab = target_vocab
+        self.charDecoder = nn.LSTM(input_size=self.char_embedding_size, hidden_size=self.hidden_size)
+        self.char_output_projection = nn.Linear(in_features=self.hidden_size,
+                                                out_features=len(self.target_vocab.char2id))
+        self.decoderCharEmb = nn.Embedding(num_embeddings=len(self.target_vocab.char2id),
+                                           embedding_dim=self.char_embedding_size,
+                                           padding_idx=self.target_vocab.char2id['<pad>'])
         ### END YOUR CODE
 
-
-    
-    def forward(self, input, dec_hidden=None):
+    def forward(self, input: torch.Tensor, dec_hidden=None):
         """ Forward pass of character decoder.
 
         @param input: tensor of integers, shape (length, batch)
@@ -44,10 +51,20 @@ class CharDecoder(nn.Module):
         """
         ### YOUR CODE HERE for part 2b
         ### TODO - Implement the forward pass of the character decoder.
-        
-        
-        ### END YOUR CODE 
+        input_emb = self.decoderCharEmb(input)  # (length, batch, emb_size)
+        last_hidden = dec_hidden
+        s_t_list = []
+        for input_emb_t in torch.split(input_emb, split_size_or_sections=1, dim=0):  # (1, batch, emb_size)
+            output, new_hidden = self.charDecoder(input_emb_t,
+                                                  last_hidden)  # (1, batch, hidden_size), (1, batch, hidden_size)
+            h_t = new_hidden[0].permute(1, 0, 2)  # (batch, 1, hidden_size)
+            s_t = self.char_output_projection(h_t)  # (batch, 1, self.vocab_size)
+            s_t_list.append(s_t)
+            last_hidden = new_hidden
+        s_ts = torch.cat(s_t_list, dim=1).permute(1, 0, 2)  # (batch, length, self.vocab_size) -> (length, batch, ..)
+        return s_ts, last_hidden
 
+    ### END YOUR CODE
 
     def train_forward(self, char_sequence, dec_hidden=None):
         """ Forward computation during training.
@@ -62,8 +79,12 @@ class CharDecoder(nn.Module):
         ###
         ### Hint: - Make sure padding characters do not contribute to the cross-entropy loss.
         ###       - char_sequence corresponds to the sequence x_1 ... x_{n+1} from the handout (e.g., <START>,m,u,s,i,c,<END>).
-
-
+        scores, _ = self.forward(char_sequence[:-1], dec_hidden)  # scores: (length-1, batch, vocab_size)
+        criterion = nn.CrossEntropyLoss(ignore_index=self.target_vocab.char2id['<pad>'], reduction='sum')
+        scores = scores.permute(1, 2, 0)  # (batch, vocab_size, length-1)
+        target = char_sequence[1:].permute(1, 0)  # (batch, length-1)
+        loss = criterion(scores, target)
+        return loss
         ### END YOUR CODE
 
     def decode_greedy(self, initialStates, device, max_length=21):
@@ -83,7 +104,24 @@ class CharDecoder(nn.Module):
         ###      - Use torch.tensor(..., device=device) to turn a list of character indices into a tensor.
         ###      - We use curly brackets as start-of-word and end-of-word characters. That is, use the character '{' for <START> and '}' for <END>.
         ###        Their indices are self.target_vocab.start_of_word and self.target_vocab.end_of_word, respectively.
-        
-        
-        ### END YOUR CODE
-
+        output_word = []
+        decoded_words = []
+        batch_size = initialStates[0].shape[1]
+        current_char = torch.tensor([[self.target_vocab.start_of_word] * batch_size], device=device)  # (1, batch)
+        hidden = initialStates
+        for _ in range(max_length):
+            scores, hidden = self.forward(current_char, hidden)  # scores: (1, batch, vocab_size)
+            current_char = torch.argmax(scores, dim=2)  # (1, batch)
+            output_word += [current_char]
+        # output_word: [(1,batch), (1,batch), ..., (1, batch)] -> (max_length, batch) -> (batch, max_length)
+        output_word = torch.transpose(torch.cat(output_word, dim=0), 0, 1)
+        for batch in range(batch_size):
+            word = ""
+            for idx in range(max_length):
+                ch_index = output_word[batch, idx].item()
+                if ch_index == self.target_vocab.end_of_word:
+                    break
+                word += self.target_vocab.id2char[ch_index]
+            decoded_words.append(word)
+        return decoded_words
+    ### END YOUR CODE

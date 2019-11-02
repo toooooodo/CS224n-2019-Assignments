@@ -277,7 +277,7 @@ def decode(args: Dict[str, str]):
     model = NMT.load(args['MODEL_PATH'], no_char_decoder=args['--no-char-decoder'])
 
     if args['--cuda']:
-        model = model.to(torch.device("cuda:0"))
+        model = model.to(torch.device("cuda:1"))
 
     hypotheses = beam_search(model, test_data_src,
                              beam_size=int(args['--beam-size']),
